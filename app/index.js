@@ -2,55 +2,45 @@
 var util = require('util');
 var path = require('path');
 var yeoman = require('yeoman-generator');
-var chalk = require('chalk');
 
 
-var ModularAngularGenerator = yeoman.generators.Base.extend({
-  init: function () {
-    this.pkg = require('../package.json');
+var ModularAngularGen = module.exports = function ModularAngularGen(args, options, config) {
+	yeoman.generators.Base.apply(this, arguments);
 
-    this.on('end', function () {
-      if (!this.options['skip-install']) {
-        this.installDependencies();
-      }
-    });
-  },
+	this.on('end', function () {
+		this.config.set('partialDirectory','partials/');
+		this.config.set('directiveDirectory','directives/');
+		this.config.set('filterDirectory','filters/');
+		this.config.set('serviceDirectory','services/');
+		this.config.save();
+		this.installDependencies({ skipInstall: options['skip-install'] });
+	});
 
-  askFor: function () {
-    var done = this.async();
+	this.pkg = JSON.parse(this.readFileAsString(path.join(__dirname, '../package.json')));
+};
 
-    // have Yeoman greet the user
-    this.log(this.yeoman);
+util.inherits(ModularAngularGen, yeoman.generators.Base);
 
-    // replace it with a short and sweet description of your generator
-    this.log(chalk.magenta('You\'re using the fantastic ModularAngular generator.'));
+ModularAngularGen.prototype.askFor = function askFor() {
+	var cb = this.async();
 
-    var prompts = [{
-      type: 'confirm',
-      name: 'someOption',
-      message: 'Would you like to enable this option?',
-      default: true
-    }];
+	var prompts = [{
+		name: 'appname',
+		message: 'What would you like the angular app/module name to be?',
+		default: path.basename(process.cwd())
+	}];
 
-    this.prompt(prompts, function (props) {
-      this.someOption = props.someOption;
+	this.prompt(prompts, function (props) {
+		this.appname = props.appname;
+		cb();
+	}.bind(this));
+};
 
-      done();
-    }.bind(this));
-  },
 
-  app: function () {
-    this.mkdir('app');
-    this.mkdir('app/templates');
 
-    this.copy('_package.json', 'package.json');
-    this.copy('_bower.json', 'bower.json');
-  },
-
-  projectfiles: function () {
-    this.copy('editorconfig', '.editorconfig');
-    this.copy('jshintrc', '.jshintrc');
-  }
-});
-
-module.exports = ModularAngularGenerator;
+ModularAngularGen.prototype.app = function app() {
+	this.directory('skeleton/','./');
+	this.template('skeleton/index.html', 'index.html');
+	this.template('skeleton/app.js', 'app.js');
+	this.template('skeleton/routes.js', 'routes.js');
+};
