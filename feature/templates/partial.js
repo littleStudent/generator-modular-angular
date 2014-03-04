@@ -1,4 +1,4 @@
-angular.module('<%= moduleName %>'<%= newModule %> ).controller('<%= ctrlname %>', function ($scope) {
+angular.module('<%= moduleName %>'<%= newModule %>).controller('<%= ctrlname %>', ['$scope'<%= dataWithQuotes %>, function ($scope<%= dataWithoutQuotes %>) {
 
 
-});
+}]);

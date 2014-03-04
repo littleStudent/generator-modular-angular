@@ -2,6 +2,7 @@ angular.module("<%= _.slugify(appname) %>", [
 	'<%= _.slugify(appname) %>.routes',
 	'ui.bootstrap',
 	'ui.utils',
+	'ui.router',
 	//Add New Modules Above
 	'ngAnimate'
 ]);

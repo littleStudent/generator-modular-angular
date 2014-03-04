@@ -37,12 +37,22 @@ PartialGenerator.prototype.askFor = function askFor() {
     var prompts = [
 		{
 			name:'module',
-			message:'Which module would you like to use?',
+			message:'Which module would you like me to use?',
 			default: ''
 		},
 		{
 			name:'purpose',
-			message:'How would you call this feature?',
+			message:'How shall i call this feature?',
+			default: ''
+		},
+		{
+			name:'service',
+			message:'Name your service. (empty for no service)',
+			default: ''
+		},
+		{
+			name:'data',
+			message:'Name your data model. (empty for no model)',
 			default: ''
 		},
 		{
@@ -57,6 +67,8 @@ PartialGenerator.prototype.askFor = function askFor() {
 		this.purpose = props.purpose;
 		this.module = props.module;
 		this.route = props.route;
+		this.data = props.data;
+		this.service = props.service;
         cb();
     }.bind(this));
 };
@@ -65,8 +77,55 @@ PartialGenerator.prototype.files = function files() {
 
     this.ctrlname = _.camelize(_.classify(this.module + this.purpose)) + 'Controller';
 	this.moduleName = this.appname + '.' + this.module;
-	this.newModule = ",[]";
+	this.dataWithQuotes = "";
+	this.dataWithoutQuotes = "";
+	this.newModule = "";
 
+	var that = this;
+
+	console.log(this.config.get('partialDirectory') + this.module);
+
+	var usedModule = false;
+
+	try {
+		_.chain(fs.readdirSync(this.config.get('partialDirectory') + this.module))
+			.filter(function(template){
+				return template[0] !== '.';
+			})
+			.each(function(template){
+
+				var foundPurpose = template;
+				var stat = fs.statSync(that.config.get('partialDirectory') + that.module + '/' + template);
+				if (stat && stat.isDirectory()) {
+					console.log(template);
+					_.chain(fs.readdirSync(that.config.get('partialDirectory') + that.module + '/' + template))
+						.filter(function(template){
+							return template[0] !== 'controller.';
+						})
+						.each(function(template){
+							console.log(template);
+							var fileData = fs.readFileSync(that.config.get('partialDirectory') + that.module + '/' + foundPurpose + "/" + template, 'utf8');
+							if (fileData.indexOf("'" + that.moduleName + "'")  > -1) {
+								usedModule = true;
+							}
+						});
+				}
+
+			});
+	} catch (e) {
+		console.log(e);
+	}
+
+	if (!usedModule) {
+		this.newModule = ", []";
+	}
+
+
+
+	if (this.data.length > 0) {
+		this.dataWithQuotes = ", '" + this.data + "'";
+		this.dataWithoutQuotes = ", " + this.data;
+	}
 
 
     var templateDirectory = path.join(path.dirname(this.resolved),'templates');
@@ -75,7 +134,6 @@ PartialGenerator.prototype.files = function files() {
     }
 
 	var controllerFile = "";
-    var that = this;
     _.chain(fs.readdirSync(templateDirectory))
         .filter(function(template){
             return template[0] !== '.';
@@ -94,6 +152,9 @@ PartialGenerator.prototype.files = function files() {
 			if (template === 'partial.less') {
 				that.name = "style." + that.module + "." + that.purpose
 			}
+			if (template === 'data.js' || template === 'service.js') {
+				return;
+			}
 
             var customTemplateName = template.replace('partial',that.name);
             var templateFile = path.join(templateDirectory,template);
@@ -109,6 +170,12 @@ PartialGenerator.prototype.files = function files() {
 		x.templateUrl = this.dir + "view." + this.module + "." + this.purpose + ".html";
 		x.controller = this.ctrlname;
 		cgUtils.injectRoute(that.route,x,that.log,that.config);
+	}
+	if (this.data.length > 0) {
+		this.template('data.js', this.dir + 'data.' + this.module + "." + this.purpose + '.js');
+	}
+	if (this.service.length > 0) {
+
 	}
 	cgUtils.injectModule(this.appname + '.' + that.module,that.log,that.config);
 };
