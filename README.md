@@ -29,9 +29,8 @@ The aim of this generator is the project structure which looks something like th
 yo modular-angular
 [?] What would you like the angular app/module name to be? generatorTutorial
 ```
-This bootstraps the application with the necessary files. 
-
-```Gulp``` is used for the build process.
+I will bootstraps the application with the necessary files and also used ```Gulp``` for the build process.
+```bootstrap```, ```ui.router```, ```ui.utils``` and ```ngAnimate``` are already included.
 
 ###features
 ```
@@ -44,6 +43,7 @@ yo modular-angular:feature
 [?] Name your data model. registrationData
 [?] Name your route state. registration
 ```
+I will encapsulate a feature in its own module so you can easily reuse it. I also give you the option to create a service and a data model for you. The directory path depends on the module name you choose. I will hook up everything in the app.js file, in the index.html file and the roues.js file.
 ###directive
 ```
 yo modular-angular:directive
@@ -52,6 +52,7 @@ yo modular-angular:directive
 [?] Shall i create a HTML file for you? Yes
 [?] Where would you like to create the directive? features/userManagement/registration/directive
 ```
+
 ###service
 ```
 yo modular-angular:service
