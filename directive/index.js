@@ -69,7 +69,7 @@ DirectiveGenerator.prototype.files = function files() {
 
 	this.newModule = "";
 	this.directiveModule = this.appPrefix + '.' + this.module;
-	this.name = _.camelize(this.purpose);
+	this.directiveName = _.camelize(this.purpose);
 
 	var that = this;
 	var usedModule = false;
@@ -135,13 +135,11 @@ function checkAvailableModule(that, usedModule) {
 				var foundPurpose = template;
 				var stat = fs.statSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + template);
 				if (stat && stat.isDirectory()) {
-					console.log(template);
 					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + template))
 						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
 						.each(function (template) {
-							console.log(template);
 							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + foundPurpose + "/" + template, 'utf8');
 							if (fileData.indexOf("'" + that.directiveModule + "'") > -1) {
 								usedModule = true;
@@ -151,7 +149,7 @@ function checkAvailableModule(that, usedModule) {
 
 			});
 	} catch (e) {
-		console.log(e);
+//		console.log(e);
 	}
 	return usedModule;
 }

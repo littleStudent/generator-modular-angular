@@ -1,12 +1,12 @@
 angular.module('<%= directiveModule %>'<%= newModule %>)
-	.directive('<%= _.camelize(name) %>', function() {
+	.directive('<%= _.camelize(directiveName) %>', function() {
 		return {
 			restrict: 'E',
 			replace: true,
 			scope: {
 
 			},
-			templateUrl: '<%= dir %>directive.<%= module %>.html',
+			templateUrl: 'view.html',
 			link: function(scope, element, attrs, fn) {
 
 

@@ -46,7 +46,7 @@ ServiceGenerator.prototype.askFor = function askFor() {
 			name:'dir',
 			message:'Where would you like to create the directive?',
 			default: function(props){
-				return defaultDir + props.module + '/' + props.service;
+				return defaultDir + props.module.replace('.', '/');
 			}
 		}
     ];
@@ -90,23 +90,21 @@ function injectService(that) {
 
 function checkAvailableModules(that, usedModule) {
 	try {
-		_.chain(fs.readdirSync(this.config.get('featureDirectory') + this.module))
+		_.chain(fs.readdirSync(this.config.get('featureDirectory') + that.module.replace('.', '/')))
 			.filter(function (template) {
 				return template[0] !== '.';
 			})
 			.each(function (template) {
 
 				var foundPurpose = template;
-				var stat = fs.statSync(that.config.get('featureDirectory') + that.module + '/' + template);
+				var stat = fs.statSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + template);
 				if (stat && stat.isDirectory()) {
-					console.log(template);
-					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.module + '/' + template))
+					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + template))
 						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
 						.each(function (template) {
-							console.log(template);
-							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.module + '/' + foundPurpose + "/" + template, 'utf8');
+							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + foundPurpose + "/" + template, 'utf8');
 							if (fileData.indexOf("'" + that.moduleName + "'") > -1) {
 								usedModule = true;
 							}
@@ -115,7 +113,7 @@ function checkAvailableModules(that, usedModule) {
 
 			});
 	} catch (e) {
-		console.log(e);
+//		console.log(e);
 	}
 	return usedModule;
 }
