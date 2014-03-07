@@ -99,8 +99,12 @@ PartialGenerator.prototype.askFor = function askFor() {
 		this.purpose = props.purpose;
 		this.module = props.module;
 		this.route = props.route;
-		this.data = props.data[0];
-		this.service = props.service[0];
+		if (props.data) {
+			this.data = props.data[0];
+		}
+		if (props.service) {
+			this.service = props.service[0];
+		}
 
         cb();
     }.bind(this));
@@ -126,14 +130,23 @@ PartialGenerator.prototype.files = function files() {
 		this.newModule = ", []";
 	}
 
+	if (this.data.length) {
+		this.dataWithQuotes = ", '" + this.data + "'";
+		this.dataWithoutQuotes = ", " + this.data;
+	}
+
+	if (this.service) {
+		this.serviceWithQuotes = ", '" + this.service + "'";
+		this.serviceWithoutQuotes = ", " + this.service;
+	}
+
+	injectTemplates.call(this, that);
 
 	injectRoute.call(this, that);
 
 	injectData.call(this, that);
 
 	injectService.call(this, that);
-
-	injectTemplates.call(this, that);
 
 	cgUtils.injectModule(this.appPrefix + '.' + that.module,that.log,that.config);
 
@@ -152,18 +165,14 @@ function injectRoute(that) {
 }
 
 function injectData(that) {
-	if (this.data.length > 0) {
-		this.dataWithQuotes = ", '" + this.data + "'";
-		this.dataWithoutQuotes = ", " + this.data;
+	if (this.data.length) {
 		this.template('data.js', this.dir + this.data + '.js');
 		cgUtils.doInjection(this.dir + this.data + '.js', that.log, that.config);
 	}
 }
 
 function injectService(that) {
-	if (this.service.length > 0) {
-		this.serviceWithQuotes = ", '" + this.service + "'";
-		this.serviceWithoutQuotes = ", " + this.service;
+	if (this.service) {
 		this.template('service.js', this.dir + this.service + '.js');
 		cgUtils.doInjection(this.dir + this.service + '.js', that.log, that.config);
 	}
