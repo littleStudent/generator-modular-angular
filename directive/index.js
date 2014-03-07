@@ -15,9 +15,9 @@ var DirectiveGenerator = module.exports = function DirectiveGenerator(args, opti
     yeoman.generators.Base.apply(this, arguments);
 
     try {
-        this.appname = require(path.join(process.cwd(), 'package.json')).name;
+        this.appPrefix = require(path.join(process.cwd(), 'package.json')).appPrefix;
     } catch (e) {
-        this.appname = 'Cant find name from package.json';
+        this.appPrefix = 'Cant find name from package.json';
     }
 
 };
@@ -33,8 +33,8 @@ DirectiveGenerator.prototype.askFor = function askFor() {
 
     var prompts = [
 		{
-			name:'context',
-			message:'Which context do you want me to use?',
+			name:'module',
+			message:'Which module do you want me to use?',
 			default: ''
 		}, {
 			name:'purpose',
@@ -49,7 +49,8 @@ DirectiveGenerator.prototype.askFor = function askFor() {
 			name:'dir',
 			message:'Where would you like to create the directive?',
 			default: function(props){
-				return defaultDir + props.context + '/' + props.purpose + '/directive';
+				return defaultDir + props.module.replace('.', '/') + '/directive';
+
         }
     }];
 
@@ -57,8 +58,7 @@ DirectiveGenerator.prototype.askFor = function askFor() {
         this.needHTML = props.needHTML;
         this.dir = cgUtils.cleanDirectory(props.dir);
 		this.purpose = props.purpose;
-		this.context = props.context;
-		this.newModule = props.newModule;
+		this.module = props.module;
         cb();
     }.bind(this));
 
@@ -68,9 +68,8 @@ DirectiveGenerator.prototype.askFor = function askFor() {
 DirectiveGenerator.prototype.files = function files() {
 
 	this.newModule = "";
-	this.directiveModule = this.appname + '.' + this.context;
-	this.name = _.camelize(this.context + this.purpose);
-	this.moduleName = this.appname + '.' + this.context;
+	this.directiveModule = this.appPrefix + '.' + this.module;
+	this.name = _.camelize(this.purpose);
 
 	var that = this;
 	var usedModule = false;
@@ -104,7 +103,18 @@ function injectTemplates(that) {
 			return template[0] !== '.';
 		})
 		.each(function (template) {
-			var customTemplateName = template.replace('directive', 'directive.' + that.context + '.' + that.purpose);
+
+			if (template === 'directive.js') {
+				that.name = "directive"
+			}
+			if (template === 'directive.html') {
+				that.name = "view"
+			}
+			if (template === 'directive.less') {
+				that.name = "style"
+			}
+
+			var customTemplateName = template.replace('directive', that.name);
 			var templateFile = path.join(templateDirectory, template);
 			//create the file
 			that.template(templateFile, that.dir + customTemplateName);
@@ -116,24 +126,24 @@ function injectTemplates(that) {
 
 function checkAvailableModule(that, usedModule) {
 	try {
-		_.chain(fs.readdirSync(this.config.get('featureDirectory') + this.context))
+		_.chain(fs.readdirSync(this.config.get('featureDirectory') + that.module.replace('.', '/')))
 			.filter(function (template) {
 				return template[0] !== '.';
 			})
 			.each(function (template) {
 
 				var foundPurpose = template;
-				var stat = fs.statSync(that.config.get('featureDirectory') + that.context + '/' + template);
+				var stat = fs.statSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + template);
 				if (stat && stat.isDirectory()) {
 					console.log(template);
-					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.context + '/' + template))
+					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + template))
 						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
 						.each(function (template) {
 							console.log(template);
-							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
-							if (fileData.indexOf("'" + that.moduleName + "'") > -1) {
+							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.module.replace('.', '/') + '/' + foundPurpose + "/" + template, 'utf8');
+							if (fileData.indexOf("'" + that.directiveModule + "'") > -1) {
 								usedModule = true;
 							}
 						});

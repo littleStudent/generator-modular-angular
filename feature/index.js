@@ -16,9 +16,9 @@ var PartialGenerator = module.exports = function PartialGenerator(args, options,
     yeoman.generators.Base.apply(this, arguments);
 
     try {
-        this.appname = require(path.join(process.cwd(), 'package.json')).name;
+        this.appPrefix = require(path.join(process.cwd(), 'package.json')).appPrefix;
     } catch (e) {
-        this.appname = 'Cant find name from package.json';
+        this.appPrefix = 'Cant find name from package.json';
     }
 
 };
@@ -27,9 +27,9 @@ util.inherits(PartialGenerator, yeoman.generators.Base);
 
 PartialGenerator.prototype.askFor = function askFor() {
     var cb = this.async();
-	var context = this.context;
     var defaultDir = this.config.get('featureDirectory');
    	console.log(defaultDir);
+	var  moduleNames = [];
 	var  purposeNames = [];
 	var  serviceNames = [];
 	var  routeNames = [];
@@ -40,14 +40,18 @@ PartialGenerator.prototype.askFor = function askFor() {
 
     var prompts = [
 		{
-			name:'context',
-			message:'Which context would you like me to use?',
+			name:'module',
+			message:'Which module would you like me to use?',
 			default: ''
 		},
 		{
+			when: function(props) {
+				moduleNames.push(props.module.replace(".", ""));
+				return true;
+			},
 			name:'purpose',
 			message:'How shall i call this feature?',
-			default: ''
+			default: moduleNames
 		},
 		{
 			type:'confirm',
@@ -81,7 +85,7 @@ PartialGenerator.prototype.askFor = function askFor() {
 		},
 		{
 			when: function(props) {
-				routeNames.push(props.context + props.purpose.capitalize());
+				routeNames.push(props.purpose);
 				return true;
 			},
 			name:'route',
@@ -91,12 +95,13 @@ PartialGenerator.prototype.askFor = function askFor() {
     ];
 
     this.prompt(prompts, function (props) {
-        this.dir = defaultDir + props.context + '/' + props.purpose + '/';
+        this.dir = defaultDir + props.module.replace('.', '/') + "/";
 		this.purpose = props.purpose;
-		this.context = props.context;
+		this.module = props.module;
 		this.route = props.route;
-		this.data = props.data;
-		this.service = props.service;
+		this.data = props.data[0];
+		this.service = props.service[0];
+
         cb();
     }.bind(this));
 };
@@ -105,8 +110,8 @@ PartialGenerator.prototype.askFor = function askFor() {
 
 PartialGenerator.prototype.files = function files() {
 
-	this.ctrlname = _.camelize(_.classify(this.context + this.purpose)) + 'Controller';
-	this.moduleName = this.appname + '.' + this.context;
+	this.ctrlname = _.camelize(_.classify(this.module.replace(".", ""))) + 'Controller';
+	this.moduleName = this.appPrefix + '.' + this.module;
 	this.dataWithQuotes = "";
 	this.dataWithoutQuotes = "";
 	this.serviceWithQuotes = "";
@@ -122,15 +127,16 @@ PartialGenerator.prototype.files = function files() {
 	}
 
 
-	injectTemplates.call(this, that);
-
 	injectRoute.call(this, that);
 
 	injectData.call(this, that);
 
 	injectService.call(this, that);
 
-	cgUtils.injectModule(this.appname + '.' + that.context,that.log,that.config);
+	injectTemplates.call(this, that);
+
+	cgUtils.injectModule(this.appPrefix + '.' + that.module,that.log,that.config);
+
 };
 
 
@@ -149,8 +155,6 @@ function injectData(that) {
 	if (this.data.length > 0) {
 		this.dataWithQuotes = ", '" + this.data + "'";
 		this.dataWithoutQuotes = ", " + this.data;
-	}
-	if (this.data.length > 0) {
 		this.template('data.js', this.dir + this.data + '.js');
 		cgUtils.doInjection(this.dir + this.data + '.js', that.log, that.config);
 	}
@@ -160,8 +164,6 @@ function injectService(that) {
 	if (this.service.length > 0) {
 		this.serviceWithQuotes = ", '" + this.service + "'";
 		this.serviceWithoutQuotes = ", " + this.service;
-	}
-	if (this.service.length > 0) {
 		this.template('service.js', this.dir + this.service + '.js');
 		cgUtils.doInjection(this.dir + this.service + '.js', that.log, that.config);
 	}
@@ -197,7 +199,6 @@ function injectTemplates(that) {
 
 			var customTemplateName = template.replace('partial', that.name);
 			var templateFile = path.join(templateDirectory, template);
-			console.log(customTemplateName);
 			//create the file
 			that.template(templateFile, that.dir + customTemplateName);
 			//inject the file reference into index.html/app.less/etc as appropriate
@@ -207,23 +208,21 @@ function injectTemplates(that) {
 
 function checkAvailableModules(that, usedModule) {
 	try {
-		_.chain(fs.readdirSync(this.config.get('featureDirectory') + this.context))
+		_.chain(fs.readdirSync(this.config.get('featureDirectory') + this.module))
 			.filter(function (template) {
 				return template[0] !== '.';
 			})
 			.each(function (template) {
 
 				var foundPurpose = template;
-				var stat = fs.statSync(that.config.get('featureDirectory') + that.context + '/' + template);
+				var stat = fs.statSync(that.config.get('featureDirectory') + that.module + '/' + template);
 				if (stat && stat.isDirectory()) {
-					console.log(template);
-					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.context + '/' + template))
+					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.module + '/' + template))
 						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
 						.each(function (template) {
-							console.log(template);
-							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
+							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.module + '/' + foundPurpose + "/" + template, 'utf8');
 							if (fileData.indexOf("'" + that.moduleName + "'") > -1) {
 								usedModule = true;
 							}
@@ -232,7 +231,7 @@ function checkAvailableModules(that, usedModule) {
 
 			});
 	} catch (e) {
-		console.log(e);
+//		console.log(e);
 	}
 	return usedModule;
 }

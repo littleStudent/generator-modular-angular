@@ -15,9 +15,9 @@ var ServiceGenerator = module.exports = function ServiceGenerator(args, options,
 	yeoman.generators.Base.apply(this, arguments);
 
 	try {
-		this.appname = require(path.join(process.cwd(), 'package.json')).name;
+		this.appPrefix = require(path.join(process.cwd(), 'package.json')).appPrefix;
 	} catch (e) {
-		this.appname = 'Cant find name from package.json';
+		this.appPrefix = 'Cant find name from package.json';
 	}
 
 };
@@ -62,7 +62,7 @@ ServiceGenerator.prototype.askFor = function askFor() {
 
 ServiceGenerator.prototype.files = function files() {
 
-	this.moduleName = this.appname + '.' + this.module;
+	this.moduleName = this.appPrefix + '.' + this.module;
 	this.newModule = "";
 
 	var that = this;

@@ -1,5 +1,5 @@
-angular.module("<%= _.slugify(appname) %>", [
-	'<%= _.slugify(appname) %>.routes',
+angular.module("<%= _.slugify(appPrefix) %>", [
+	'<%= _.slugify(appPrefix) %>.routes',
 	'ui.bootstrap',
 	'ui.utils',
 	'ui.router',
@@ -7,7 +7,7 @@ angular.module("<%= _.slugify(appname) %>", [
 	'ngAnimate'
 ]);
 
-angular.module("<%= _.slugify(appname) %>").run(function ($rootScope) {
+angular.module("<%= _.slugify(appPrefix) %>").run(function ($rootScope) {
 
     $rootScope.safeApply = function (fn) {
         var phase = $rootScope.$$phase;

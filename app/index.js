@@ -25,13 +25,19 @@ ModularAngularGen.prototype.askFor = function askFor() {
 	var cb = this.async();
 
 	var prompts = [{
-		name: 'appname',
-		message: 'What would you like the angular app/module name to be?',
-		default: path.basename(process.cwd())
-	}];
+			name: 'appname',
+			message: 'What would you like the angular app/module name to be?',
+			default: path.basename(process.cwd())
+		},
+		{
+			name: 'appPrefix',
+			message: 'Which prefix do you want to use?',
+			default: ''
+		}];
 
 	this.prompt(prompts, function (props) {
 		this.appname = props.appname;
+		this.appPrefix = props.appPrefix;
 		cb();
 	}.bind(this));
 };
