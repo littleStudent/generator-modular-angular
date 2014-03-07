@@ -2,6 +2,17 @@
 
 This is a yeoman generator for angularJS applications.
 
+###commands
+* create app ```yo modular-angular```
+* create feature (module) ```yo modular-angular:feature```
+* create directive ```yo modular-angular:directive```
+* create service ```yo modular-angular:service```
+
+###server
+run ```gulp```
+
+
+
 The aim of this generator is the project structure which looks something like this:
 ```
 ... app.js
