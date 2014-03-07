@@ -28,8 +28,8 @@ util.inherits(PartialGenerator, yeoman.generators.Base);
 PartialGenerator.prototype.askFor = function askFor() {
     var cb = this.async();
 	var context = this.context;
-    var defaultDir = this.config.get('partialDirectory');
-
+    var defaultDir = this.config.get('featureDirectory');
+   	console.log(defaultDir);
 	var  purposeNames = [];
 	var  serviceNames = [];
 	var  routeNames = [];
@@ -139,7 +139,7 @@ function injectRoute(that) {
 	if (this.route.length > 0) {
 		var x = {};
 		x.url = "/" + that.route;
-		x.templateUrl = this.dir + "view." + this.context + "." + this.purpose + ".html";
+		x.templateUrl = this.dir + "view.html";
 		x.controller = this.ctrlname;
 		cgUtils.injectRoute(("" + that.route).replace('/', '.'), x, that.log, that.config);
 	}
@@ -151,8 +151,8 @@ function injectData(that) {
 		this.dataWithoutQuotes = ", " + this.data;
 	}
 	if (this.data.length > 0) {
-		this.template('data.js', this.dir + "data." + this.context + "." + this.purpose + '.js');
-		cgUtils.doInjection(this.dir + "data." + this.context + "." + this.purpose + '.js', that.log, that.config);
+		this.template('data.js', this.dir + this.data + '.js');
+		cgUtils.doInjection(this.dir + this.data + '.js', that.log, that.config);
 	}
 }
 
@@ -162,8 +162,8 @@ function injectService(that) {
 		this.serviceWithoutQuotes = ", " + this.service;
 	}
 	if (this.service.length > 0) {
-		this.template('service.js', this.dir + "service." + this.context + "." + this.purpose + '.js');
-		cgUtils.doInjection(this.dir + "service." + this.context + "." + this.purpose + '.js', that.log, that.config);
+		this.template('service.js', this.dir + this.service + '.js');
+		cgUtils.doInjection(this.dir + this.service + '.js', that.log, that.config);
 	}
 }
 
@@ -180,16 +180,16 @@ function injectTemplates(that) {
 		.each(function (template) {
 
 			if (template === 'partial-spec.js') {
-				that.name = "spec." + that.context + "." + that.purpose
+				that.name = "spec"
 			}
 			if (template === 'partial.html') {
-				that.name = "view." + that.context + "." + that.purpose
+				that.name = "view"
 			}
 			if (template === 'partial.js') {
-				that.name = "controller." + that.context + "." + that.purpose
+				that.name = "controller"
 			}
 			if (template === 'partial.less') {
-				that.name = "style." + that.context + "." + that.purpose
+				that.name = "style"
 			}
 			if (template === 'data.js' || template === 'service.js') {
 				return;
@@ -207,23 +207,23 @@ function injectTemplates(that) {
 
 function checkAvailableModules(that, usedModule) {
 	try {
-		_.chain(fs.readdirSync(this.config.get('partialDirectory') + this.context))
+		_.chain(fs.readdirSync(this.config.get('featureDirectory') + this.context))
 			.filter(function (template) {
 				return template[0] !== '.';
 			})
 			.each(function (template) {
 
 				var foundPurpose = template;
-				var stat = fs.statSync(that.config.get('partialDirectory') + that.context + '/' + template);
+				var stat = fs.statSync(that.config.get('featureDirectory') + that.context + '/' + template);
 				if (stat && stat.isDirectory()) {
 					console.log(template);
-					_.chain(fs.readdirSync(that.config.get('partialDirectory') + that.context + '/' + template))
+					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.context + '/' + template))
 						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
 						.each(function (template) {
 							console.log(template);
-							var fileData = fs.readFileSync(that.config.get('partialDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
+							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
 							if (fileData.indexOf("'" + that.moduleName + "'") > -1) {
 								usedModule = true;
 							}

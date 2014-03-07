@@ -26,7 +26,7 @@ util.inherits(DirectiveGenerator, yeoman.generators.NamedBase);
 
 DirectiveGenerator.prototype.askFor = function askFor() {
     var cb = this.async();
-    var defaultDir = this.config.get('partialDirectory');
+    var defaultDir = this.config.get('featureDirectory');
     if (!_(defaultDir).endsWith('/')) {
         defaultDir += '/';
     }
@@ -116,23 +116,23 @@ function injectTemplates(that) {
 
 function checkAvailableModule(that, usedModule) {
 	try {
-		_.chain(fs.readdirSync(this.config.get('partialDirectory') + this.context))
+		_.chain(fs.readdirSync(this.config.get('featureDirectory') + this.context))
 			.filter(function (template) {
 				return template[0] !== '.';
 			})
 			.each(function (template) {
 
 				var foundPurpose = template;
-				var stat = fs.statSync(that.config.get('partialDirectory') + that.context + '/' + template);
+				var stat = fs.statSync(that.config.get('featureDirectory') + that.context + '/' + template);
 				if (stat && stat.isDirectory()) {
 					console.log(template);
-					_.chain(fs.readdirSync(that.config.get('partialDirectory') + that.context + '/' + template))
+					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.context + '/' + template))
 						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
 						.each(function (template) {
 							console.log(template);
-							var fileData = fs.readFileSync(that.config.get('partialDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
+							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
 							if (fileData.indexOf("'" + that.moduleName + "'") > -1) {
 								usedModule = true;
 							}

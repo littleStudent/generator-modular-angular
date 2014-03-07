@@ -8,7 +8,7 @@ var ModularAngularGen = module.exports = function ModularAngularGen(args, option
 	yeoman.generators.Base.apply(this, arguments);
 
 	this.on('end', function () {
-		this.config.set('partialDirectory','partials/');
+		this.config.set('featureDirectory','features/');
 		this.config.set('directiveDirectory','directives/');
 		this.config.set('filterDirectory','filters/');
 		this.config.set('serviceDirectory','services/');

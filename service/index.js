@@ -26,7 +26,7 @@ util.inherits(ServiceGenerator, yeoman.generators.Base);
 
 ServiceGenerator.prototype.askFor = function askFor() {
     var cb = this.async();
-    var defaultDir = this.config.get('partialDirectory');
+    var defaultDir = this.config.get('featureDirectory');
     if (!_(defaultDir).endsWith('/')) {
         defaultDir += '/';
     }
@@ -83,30 +83,30 @@ function injectService(that) {
 		this.serviceWithoutQuotes = ", " + this.service;
 	}
 	if (this.service.length > 0) {
-		this.template('service.js', this.dir + 'service.' + this.service + "." + this.module+ '.js');
-		cgUtils.doInjection(this.dir + this.service + "." + this.module + '.js', that.log, that.config);
+		this.template('service.js', this.dir + this.service + '.js');
+		cgUtils.doInjection(this.dir + this.service + '.js', that.log, that.config);
 	}
 }
 
 function checkAvailableModules(that, usedModule) {
 	try {
-		_.chain(fs.readdirSync(this.config.get('partialDirectory') + this.context))
+		_.chain(fs.readdirSync(this.config.get('featureDirectory') + this.module))
 			.filter(function (template) {
 				return template[0] !== '.';
 			})
 			.each(function (template) {
 
 				var foundPurpose = template;
-				var stat = fs.statSync(that.config.get('partialDirectory') + that.context + '/' + template);
+				var stat = fs.statSync(that.config.get('featureDirectory') + that.module + '/' + template);
 				if (stat && stat.isDirectory()) {
 					console.log(template);
-					_.chain(fs.readdirSync(that.config.get('partialDirectory') + that.context + '/' + template))
+					_.chain(fs.readdirSync(that.config.get('featureDirectory') + that.module + '/' + template))
 						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
 						.each(function (template) {
 							console.log(template);
-							var fileData = fs.readFileSync(that.config.get('partialDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
+							var fileData = fs.readFileSync(that.config.get('featureDirectory') + that.module + '/' + foundPurpose + "/" + template, 'utf8');
 							if (fileData.indexOf("'" + that.moduleName + "'") > -1) {
 								usedModule = true;
 							}
