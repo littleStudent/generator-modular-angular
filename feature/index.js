@@ -27,17 +27,21 @@ util.inherits(PartialGenerator, yeoman.generators.Base);
 
 PartialGenerator.prototype.askFor = function askFor() {
     var cb = this.async();
-    var name = this.name;
-	var module = this.module;
+	var context = this.context;
     var defaultDir = this.config.get('partialDirectory');
+
+	var  purposeNames = [];
+	var  serviceNames = [];
+	var  routeNames = [];
+
     if (!_(defaultDir).endsWith('/')) {
         defaultDir += '/';
     }
 
     var prompts = [
 		{
-			name:'module',
-			message:'Which module would you like me to use?',
+			name:'context',
+			message:'Which context would you like me to use?',
 			default: ''
 		},
 		{
@@ -46,26 +50,50 @@ PartialGenerator.prototype.askFor = function askFor() {
 			default: ''
 		},
 		{
+			type:'confirm',
+			name: 'createService',
+			message: 'Shall i create a service for you?',
+			default: true
+		},
+		{
+			when: function(props) {
+				purposeNames.push(props.purpose + "Service");
+				return props.createService;
+			},
 			name:'service',
-			message:'Name your service. (empty for no service)',
-			default: ''
+			message:'Name your service.',
+			default: purposeNames
 		},
 		{
+			type:'confirm',
+			name: 'createData',
+			message: 'Shall i create a data model for you?',
+			default: true
+		},
+		{
+			when: function(props) {
+				serviceNames.push(props.purpose + "Data");
+				return props.createData;
+			},
 			name:'data',
-			message:'Name your data model. (empty for no model)',
-			default: ''
+			message:'Name your data model.',
+			default: serviceNames
 		},
 		{
+			when: function(props) {
+				routeNames.push(props.context + props.purpose.capitalize());
+				return true;
+			},
 			name:'route',
-			message:'Name your route state. (empty for no route)',
-			default: ''
+			message:'Name your route state.',
+			default: routeNames
 		}
     ];
 
     this.prompt(prompts, function (props) {
-        this.dir = defaultDir + props.module + '/' + props.purpose + '/';
+        this.dir = defaultDir + props.context + '/' + props.purpose + '/';
 		this.purpose = props.purpose;
-		this.module = props.module;
+		this.context = props.context;
 		this.route = props.route;
 		this.data = props.data;
 		this.service = props.service;
@@ -73,39 +101,130 @@ PartialGenerator.prototype.askFor = function askFor() {
     }.bind(this));
 };
 
+
+
 PartialGenerator.prototype.files = function files() {
 
-    this.ctrlname = _.camelize(_.classify(this.module + this.purpose)) + 'Controller';
-	this.moduleName = this.appname + '.' + this.module;
+	this.ctrlname = _.camelize(_.classify(this.context + this.purpose)) + 'Controller';
+	this.moduleName = this.appname + '.' + this.context;
 	this.dataWithQuotes = "";
 	this.dataWithoutQuotes = "";
+	this.serviceWithQuotes = "";
+	this.serviceWithoutQuotes = "";
 	this.newModule = "";
 
+
 	var that = this;
-
-	console.log(this.config.get('partialDirectory') + this.module);
-
 	var usedModule = false;
+	usedModule = checkAvailableModules.call(this, that, usedModule);
+	if (!usedModule) {
+		this.newModule = ", []";
+	}
 
+
+	injectTemplates.call(this, that);
+
+	injectRoute.call(this, that);
+
+	injectData.call(this, that);
+
+	injectService.call(this, that);
+
+	cgUtils.injectModule(this.appname + '.' + that.context,that.log,that.config);
+};
+
+
+
+function injectRoute(that) {
+	if (this.route.length > 0) {
+		var x = {};
+		x.url = "/" + that.route;
+		x.templateUrl = this.dir + "view." + this.context + "." + this.purpose + ".html";
+		x.controller = this.ctrlname;
+		cgUtils.injectRoute(("" + that.route).replace('/', '.'), x, that.log, that.config);
+	}
+}
+
+function injectData(that) {
+	if (this.data.length > 0) {
+		this.dataWithQuotes = ", '" + this.data + "'";
+		this.dataWithoutQuotes = ", " + this.data;
+	}
+	if (this.data.length > 0) {
+		this.template('data.js', this.dir + "data." + this.context + "." + this.purpose + '.js');
+		cgUtils.doInjection(this.dir + "data." + this.context + "." + this.purpose + '.js', that.log, that.config);
+	}
+}
+
+function injectService(that) {
+	if (this.service.length > 0) {
+		this.serviceWithQuotes = ", '" + this.service + "'";
+		this.serviceWithoutQuotes = ", " + this.service;
+	}
+	if (this.service.length > 0) {
+		this.template('service.js', this.dir + "service." + this.context + "." + this.purpose + '.js');
+		cgUtils.doInjection(this.dir + "service." + this.context + "." + this.purpose + '.js', that.log, that.config);
+	}
+}
+
+function injectTemplates(that) {
+	var templateDirectory = path.join(path.dirname(this.resolved), 'templates');
+	if (this.config.get('partialTemplates')) {
+		templateDirectory = path.join(process.cwd(), this.config.get('partialTemplates'));
+	}
+
+	_.chain(fs.readdirSync(templateDirectory))
+		.filter(function (template) {
+			return template[0] !== '.';
+		})
+		.each(function (template) {
+
+			if (template === 'partial-spec.js') {
+				that.name = "spec." + that.context + "." + that.purpose
+			}
+			if (template === 'partial.html') {
+				that.name = "view." + that.context + "." + that.purpose
+			}
+			if (template === 'partial.js') {
+				that.name = "controller." + that.context + "." + that.purpose
+			}
+			if (template === 'partial.less') {
+				that.name = "style." + that.context + "." + that.purpose
+			}
+			if (template === 'data.js' || template === 'service.js') {
+				return;
+			}
+
+			var customTemplateName = template.replace('partial', that.name);
+			var templateFile = path.join(templateDirectory, template);
+			console.log(customTemplateName);
+			//create the file
+			that.template(templateFile, that.dir + customTemplateName);
+			//inject the file reference into index.html/app.less/etc as appropriate
+			cgUtils.doInjection(that.dir + customTemplateName, that.log, that.config);
+		});
+}
+
+function checkAvailableModules(that, usedModule) {
 	try {
-		_.chain(fs.readdirSync(this.config.get('partialDirectory') + this.module))
-			.filter(function(template){
+		_.chain(fs.readdirSync(this.config.get('partialDirectory') + this.context))
+			.filter(function (template) {
 				return template[0] !== '.';
 			})
-			.each(function(template){
+			.each(function (template) {
 
 				var foundPurpose = template;
-				var stat = fs.statSync(that.config.get('partialDirectory') + that.module + '/' + template);
+				var stat = fs.statSync(that.config.get('partialDirectory') + that.context + '/' + template);
 				if (stat && stat.isDirectory()) {
 					console.log(template);
-					_.chain(fs.readdirSync(that.config.get('partialDirectory') + that.module + '/' + template))
-						.filter(function(template){
+					_.chain(fs.readdirSync(that.config.get('partialDirectory') + that.context + '/' + template))
+						.filter(function (template) {
 							return template[0] !== 'controller.';
 						})
-						.each(function(template){
+						.each(function (template) {
 							console.log(template);
-							var fileData = fs.readFileSync(that.config.get('partialDirectory') + that.module + '/' + foundPurpose + "/" + template, 'utf8');
-							if (fileData.indexOf("'" + that.moduleName + "'")  > -1) {
+							var fileData = fs.readFileSync(that.config.get('partialDirectory') + that.context + '/' + foundPurpose + "/" + template, 'utf8');
+							if (fileData.indexOf("'" + that.moduleName + "'") > -1) {
 								usedModule = true;
 							}
 						});
@@ -115,67 +234,10 @@ PartialGenerator.prototype.files = function files() {
 	} catch (e) {
 		console.log(e);
 	}
-
-	if (!usedModule) {
-		this.newModule = ", []";
-	}
+	return usedModule;
+}
 
 
-
-	if (this.data.length > 0) {
-		this.dataWithQuotes = ", '" + this.data + "'";
-		this.dataWithoutQuotes = ", " + this.data;
-	}
-
-
-    var templateDirectory = path.join(path.dirname(this.resolved),'templates');
-    if(this.config.get('partialTemplates')){
-        templateDirectory = path.join(process.cwd(),this.config.get('partialTemplates'));
-    }
-
-	var controllerFile = "";
-    _.chain(fs.readdirSync(templateDirectory))
-        .filter(function(template){
-            return template[0] !== '.';
-        })
-        .each(function(template){
-
-			if (template === 'partial-spec.js') {
-				that.name = "spec." + that.module + "." + that.purpose
-			}
-			if (template === 'partial.html') {
-				that.name = "view." + that.module + "." + that.purpose
-			}
-			if (template === 'partial.js') {
-				that.name = "controller." + that.module + "." + that.purpose
-			}
-			if (template === 'partial.less') {
-				that.name = "style." + that.module + "." + that.purpose
-			}
-			if (template === 'data.js' || template === 'service.js') {
-				return;
-			}
-
-            var customTemplateName = template.replace('partial',that.name);
-            var templateFile = path.join(templateDirectory,template);
-			console.log(customTemplateName);
-            //create the file
-            that.template(templateFile,that.dir + customTemplateName);
-            //inject the file reference into index.html/app.less/etc as appropriate
-            cgUtils.doInjection(that.dir + customTemplateName,that.log,that.config);
-        });
-	if (this.route.length > 0) {
-		var x = {};
-		x.url =  "/" + that.route;
-		x.templateUrl = this.dir + "view." + this.module + "." + this.purpose + ".html";
-		x.controller = this.ctrlname;
-		cgUtils.injectRoute(that.route,x,that.log,that.config);
-	}
-	if (this.data.length > 0) {
-		this.template('data.js', this.dir + 'data.' + this.module + "." + this.purpose + '.js');
-	}
-	if (this.service.length > 0) {
-
-	}
-	cgUtils.injectModule(this.appname + '.' + that.module,that.log,that.config);
-};
+String.prototype.capitalize = function() {
+	return this.charAt(0).toUpperCase() + this.slice(1);
+}
