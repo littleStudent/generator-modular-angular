@@ -11,7 +11,7 @@ This is a yeoman generator for angularJS applications.
 ###server
 run ```gulp```
 
-
+---
 ##Structure
 The aim of this generator is the project structure which looks something like this:
 ```
