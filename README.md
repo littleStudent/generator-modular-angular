@@ -1,4 +1,4 @@
-##generator-modular-angular
+#generator-modular-angular
 
 This is a yeoman generator for angularJS applications.
 
@@ -12,7 +12,7 @@ This is a yeoman generator for angularJS applications.
 run ```gulp```
 
 
-
+##Structure
 The aim of this generator is the project structure which looks something like this:
 ```
 ... app.js
